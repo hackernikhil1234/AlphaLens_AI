@@ -1,7 +1,7 @@
 # AlphaLens AI: System Architecture
 
 ## 1. Architecture Overview
-AlphaLens AI utilizes a modern, decoupled client-server architecture optimized for orchestrating complex AI workflows. The React.js frontend handles user interaction and streams real-time updates to keep the user engaged. The Node.js/Express.js backend serves as the secure API gateway, shielding API keys and housing the LangGraph state machine. LangGraph coordinates five distinct AI agents, which interact with external APIs (Yahoo Finance, NewsAPI, Tavily) to gather quantitative and qualitative data. The Gemini API provides the core LLM reasoning engine for these agents. Finally, MongoDB acts as a caching layer to store generated reports, saving API costs and dramatically reducing latency for repeat queries.
+AlphaLens AI utilizes a decoupled architecture where data collection is strictly separated from AI reasoning. The Node.js/Express.js backend serves as an API gateway and Data Collection Service. It fetches raw data from external APIs (Yahoo Finance, NewsAPI, Tavily) in parallel, normalizes it, and passes it into LangGraph as a unified initial state. The LangGraph agents, powered by Gemini, act strictly as analytical reasoning engines that read the pre-fetched state. MongoDB caches the final structured JSON outputs.
 
 ## 2. High-Level Architecture Diagram
 
@@ -13,7 +13,15 @@ graph TD
     %% Backend & DB
     subgraph Backend Infrastructure
         Server[Express.js API Server]
+        DC[Data Collection Service]
         DB[(MongoDB)]
+    end
+
+    %% External APIs (Data)
+    subgraph External Data APIs
+        YF[Yahoo Finance]
+        NAPI[NewsAPI]
+        TAV[Tavily Search]
     end
 
     %% LangGraph Agents
@@ -26,18 +34,23 @@ graph TD
         A5[Chairperson Agent]
     end
 
-    %% External APIs
-    subgraph External Services
+    %% External APIs (AI)
+    subgraph AI Provider
         LLM[Gemini API]
-        YF[Yahoo Finance]
-        NAPI[NewsAPI]
-        TAV[Tavily Search]
     end
 
     %% Connections
-    Client <-->|REST / SSE| Server
+    Client <-->|REST / Polling| Server
     Server <--> DB
-    Server -->|Trigger| LG
+    Server <--> DC
+    
+    %% Data Collection Phase
+    DC <--> YF
+    DC <--> NAPI
+    DC <--> TAV
+    
+    %% Graph Phase
+    DC -->|Normalized Pre-fetched State| LG
     
     LG --> A1
     LG --> A2
@@ -45,12 +58,7 @@ graph TD
     LG --> A4
     LG --> A5
 
-    %% Agent External Calls
-    A1 <--> TAV
-    A2 <--> YF
-    A3 <--> NAPI
-    
-    %% LLM Reasoning
+    %% LLM Reasoning Phase
     A1 <--> LLM
     A2 <--> LLM
     A3 <--> LLM
@@ -59,50 +67,37 @@ graph TD
 ```
 
 ## 3. Request Lifecycle
-1. **User Input:** The user types a company ticker (e.g., "AAPL") into the React UI and clicks "Analyze".
-2. **React Client:** Sends a `POST /api/analyze` request with the ticker to the Express backend.
-3. **Express (Cache Check):** Queries MongoDB to check if a report for "AAPL" was generated in the last 24 hours. If a valid cache exists, it returns the report immediately, skipping step 4.
-4. **LangGraph (Execution):** If no cache exists, Express initiates the LangGraph workflow and opens a Server-Sent Events (SSE) connection back to React to stream live agent status updates (e.g., "Fetching financials...").
-5. **External APIs & Agents:**
-    *   **Research Agent** verifies the ticker via Tavily.
-    *   **Financial Agent** fetches market data via Yahoo Finance.
-    *   **News Agent** pulls recent headlines via NewsAPI.
-    *   **Risk Agent** reviews all gathered data to explicitly identify vulnerabilities.
-    *   **Chairperson Agent** synthesizes the final report using Gemini.
-6. **Database Write:** The Express server saves the final generated report payload into MongoDB.
-7. **Client Render:** The SSE connection closes, the React frontend receives the final JSON payload, and renders the Markdown report to the user.
+1. **User Input:** User types a ticker into React.
+2. **React Client:** Sends `POST /api/runs`.
+3. **Express (Cache Check):** Checks MongoDB for a recent run.
+4. **Data Collection Service:** Express executes parallel API calls to Yahoo Finance, NewsAPI, and Tavily. The data is normalized into `marketData`, `news`, and `company`.
+5. **LangGraph (Execution):** Express initializes LangGraph with the pre-fetched data. The agents execute sequentially, relying only on the Gemini API to perform reasoning tasks on the provided data, updating the `agents` array in the state.
+6. **Database Write:** Express saves the final state (including structured JSON `sections` and UI `agents` status) to MongoDB.
+7. **Client Render:** React polls the status, receives the final JSON, and renders the `sections` directly as Markdown on the client side.
 
 ## 4. Component Responsibilities
-*   **React Frontend:** Captures user input, handles UI state, displays the live "Agent Chatter" during loading, and renders the final Markdown report.
-*   **Express Backend:** Acts as the API gateway, handles database caching, orchestrates the LangGraph state machine, and securely holds all external API keys.
-*   **LangGraph:** Manages the internal "State", memory, and sequential routing between the different AI agents.
-*   **Research Agent:** Validates the company name and provides a high-level corporate overview.
-*   **Financial Agent:** Extracts and structures hard quantitative data (Current Price, P/E, Market Cap).
-*   **News Agent:** Retrieves current market sentiment and recent qualitative events.
-*   **Risk Agent:** Acts as the "Devil's Advocate," explicitly looking for headwinds, regulatory issues, or bearish signals.
-*   **Chairperson Agent:** The final decision-maker. Weighs the Bull data (Financials/News) against the Bear data (Risk) to write the final recommendation.
-*   **MongoDB:** Caches finished reports by ticker symbol and timestamp.
-*   **External APIs:** Provide the raw ground-truth data (YF, News, Tavily) and the computational reasoning (Gemini).
+*   **React Frontend:** Captures input, polls `/status`, renders UI from the structured `agents` array, and dynamically formats the Chairperson's JSON output into a visual Markdown report.
+*   **Express Backend:** Acts as the API gateway and Data Collection Service. It abstracts away all external API complexity before LangGraph ever runs.
+*   **LangGraph:** Responsible purely for state orchestration and sequential reasoning.
+*   **Research Agent:** Analyzes `company` data to output `researchSummary`.
+*   **Financial Agent:** Analyzes `marketData` to output `financialAnalysis`.
+*   **News Agent:** Analyzes `news` to output `newsAnalysis`.
+*   **Risk Agent:** Analyzes preceding outputs to formulate `riskAnalysis`.
+*   **Chairperson Agent:** Synthesizes final JSON `recommendation`, `confidence`, `reasoning`, and `sections`.
+*   **MongoDB:** Stores the runs, including `debugLogs` and the UI `agents` status.
 
 ## 5. Data Flow
-*   **Client -> Server:** Ticker symbol (String).
-*   **Server -> DB:** Ticker query. Returns cached Report (JSON) if found.
-*   **Server -> LangGraph:** Initial State object containing the target Ticker.
-*   **Agent -> Agent:** The LangGraph "State" object is passed sequentially. Each agent appends its findings (e.g., the Financial Agent appends a JSON block of metrics to the State).
-*   **Agent -> Gemini:** System Prompt + Contextual State Data. Returns generated text.
-*   **LangGraph -> Server:** The final State object containing the Chairperson's completed Markdown string and confidence score.
-*   **Server -> Client (During Analysis):** SSE string events (e.g., `{"status": "Financial Agent running"}`).
-*   **Server -> Client (Completion):** Full JSON payload containing the Markdown string, Data Citations, and Metadata.
+*   **Client -> Server:** Ticker symbol.
+*   **Server -> External APIs:** Fetch raw JSON data.
+*   **Server -> LangGraph:** Inject `ticker`, `company`, `marketData`, `news`.
+*   **Agent -> Gemini:** Pass data + analysis prompt.
+*   **LangGraph -> Server:** Final state with structured analytical JSON.
+*   **Server -> Client:** `agents` status array during processing; `report` JSON upon completion.
 
 ## 6. Failure Handling
-*   **Gemini fails:** The LangGraph node catches the LLM error, attempts 1 automatic retry, and if it still fails, returns a gracefully degraded state: "Analysis failed due to AI provider outage."
-*   **Yahoo Finance fails:** The Financial Agent catches the API error and appends `{ error: "Data unavailable" }` to the state. The Chairperson Agent acknowledges this in the final report (e.g., "Note: Unable to retrieve current P/E...").
-*   **News API fails:** The News Agent falls back to Tavily search. If both fail, it passes an empty array to the state, and the report notes the lack of recent news rather than hallucinating headlines.
-*   **MongoDB fails:** The Express server gracefully catches the DB connection error, bypasses the cache check entirely, runs the live LangGraph analysis, and skips the final save—returning the live data directly to the user so the app remains fully functional.
-*   **Research has insufficient evidence:** If no data is found for a ticker, the workflow short-circuits at the Research Agent, returning an immediate error to the user: "Ticker not found or invalid."
+*   **External API Fails (Pre-Graph):** If Express cannot fetch critical data (e.g., Yahoo Finance is down), it returns a 503 error to the client, preventing expensive LLM calls from starting.
+*   **Gemini Fails:** The specific LangGraph node retries once, then fails, appending to `debugLogs`.
+*   **MongoDB Fails:** Skips caching and executes a live run.
 
 ## 7. Scalability
-While explicitly scoped for a 7-day internship project, the architecture is designed with enterprise scale in mind:
-*   **Horizontal Scaling:** The Express backend is stateless (outside of the DB cache) and can be Dockerized and scaled horizontally across multiple instances (e.g., AWS ECS or Render).
-*   **Async Message Queues:** For higher volume, the HTTP request could push a job to a Redis/BullMQ queue instead of waiting synchronously. This would allow the backend to process hundreds of simultaneous ticker requests without timing out.
-*   **Agent Expansion:** LangGraph's modularity means adding an "SEC Filings Agent" or "Twitter Sentiment Agent" in the future requires adding only one new node to the graph, without rewriting the core orchestration logic.
+By removing external API calls from the AI agents, the Data Collection Service can be independently scaled, load-balanced, or swapped with premium API providers (like Bloomberg) without changing a single line of LangGraph reasoning code.
