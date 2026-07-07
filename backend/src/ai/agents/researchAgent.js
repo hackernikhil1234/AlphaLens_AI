@@ -4,6 +4,8 @@ const { researchSchema } = require('../schemas/agentSchemas');
 const { updateAgentStatus } = require('../utils/statusUpdater');
 
 const researchAgent = async (state) => {
+  console.log("========== RESEARCH AGENT STATE ==========");
+  console.log(JSON.stringify(state, null, 2));
   try {
     await updateAgentStatus(state.runId, 'Research Agent', 'running');
     const llm = getGeminiModel(0).withStructuredOutput(researchSchema);

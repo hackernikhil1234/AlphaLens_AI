@@ -4,6 +4,8 @@ const { financialSchema } = require('../schemas/agentSchemas');
 const { updateAgentStatus } = require('../utils/statusUpdater');
 
 const financialAgent = async (state) => {
+  console.log("========== FINANCIAL AGENT STATE ==========");
+  console.log(JSON.stringify(state, null, 2));
   try {
     await updateAgentStatus(state.runId, 'Financial Agent', 'running');
     const llm = getGeminiModel(0).withStructuredOutput(financialSchema);

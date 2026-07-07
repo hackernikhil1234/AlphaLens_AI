@@ -1,9 +1,21 @@
 const runService = require('../services/runService');
+const { executeRun } = require('../ai/graph/orchestrator');
+const dataCollectionService = require('../services/dataCollectionService');
 
 const createRun = async (req, res, next) => {
   try {
     const { ticker } = req.body;
     const run = await runService.createRun(ticker);
+    // Trigger data collection and LangGraph background workflow asynchronously
+    (async () => {
+      try {
+        const initialState = await dataCollectionService.collectData(ticker);
+        await executeRun(run._id, initialState);
+      } catch (err) {
+        console.error("Background workflow failed:", err);
+      }
+    })();
+    
     res.status(201).json({ runId: run._id, status: run.status });
   } catch (error) {
     next(error);

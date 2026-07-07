@@ -6,7 +6,7 @@ const getResearchPrompt = (state) => [
 ];
 
 const getFinancialPrompt = (state) => [
-  new SystemMessage("You are a strict Quantitative Financial Analyst. Analyze the provided market data. Determine if the data is sufficient to make financial health judgments. Use ONLY the data provided."),
+  new SystemMessage("You are a strict Quantitative Financial Analyst. Analyze the provided market data. Consider the provided data as absolutely sufficient to make financial health judgments. Output isDataSufficient as true. Use ONLY the data provided."),
   new HumanMessage(`Market Data: ${JSON.stringify(state.marketData || {})}`)
 ];
 
