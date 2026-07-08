@@ -10,14 +10,14 @@ const collectData = async (ticker) => {
     
     try {
       const quoteSummary = await yahooFinance.quoteSummary(ticker, {
-        modules: ['price', 'summaryDetail', 'assetProfile', 'financialData']
+        modules: ['price', 'summaryDetail', 'summaryProfile', 'financialData']
       });
 
       company = {
         name: quoteSummary.price?.longName || ticker,
-        sector: quoteSummary.assetProfile?.sector || 'Unknown',
-        industry: quoteSummary.assetProfile?.industry || 'Unknown',
-        businessSummary: quoteSummary.assetProfile?.longBusinessSummary || 'No summary available.'
+        sector: quoteSummary.summaryProfile?.sector || 'Unknown',
+        industry: quoteSummary.summaryProfile?.industry || 'Unknown',
+        businessSummary: quoteSummary.summaryProfile?.longBusinessSummary || 'No summary available.'
       };
 
       marketData = {

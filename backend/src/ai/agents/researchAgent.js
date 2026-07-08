@@ -4,8 +4,6 @@ const { researchSchema } = require('../schemas/agentSchemas');
 const { updateAgentStatus } = require('../utils/statusUpdater');
 
 const researchAgent = async (state) => {
-  console.log("========== RESEARCH AGENT STATE ==========");
-  console.log(JSON.stringify(state, null, 2));
   try {
     await updateAgentStatus(state.runId, 'Research Agent', 'running');
     const llm = getGeminiModel(0).withStructuredOutput(researchSchema);
@@ -13,8 +11,13 @@ const researchAgent = async (state) => {
     await updateAgentStatus(state.runId, 'Research Agent', 'completed');
     return { researchSummary: result };
   } catch (error) {
+    console.error("========== RESEARCH AGENT ERROR ==========");
+    console.error(error);
+    console.error(error.stack);
     await updateAgentStatus(state.runId, 'Research Agent', 'failed');
-    return { errors: ['Research Agent Failed: ' + error.message] };
+    return {
+      errors: ["Research Agent Failed: " + error.message]
+    };
   }
 };
 

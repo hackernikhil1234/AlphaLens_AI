@@ -12,8 +12,17 @@ export default function Analysis() {
 
   useEffect(() => {
     let intervalId;
+    let pollCount = 0;
+    const MAX_POLLS = 60; // 60 × 2.5s = 150 seconds max
 
     const pollStatus = async () => {
+      pollCount++;
+      if (pollCount > MAX_POLLS) {
+        clearInterval(intervalId);
+        setError('Analysis is taking too long. Please check the backend or try again.');
+        return;
+      }
+
       try {
         const data = await getRunStatus(runId);
         setRun(data);

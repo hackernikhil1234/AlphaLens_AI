@@ -21,7 +21,18 @@ const getRiskPrompt = (state) => [
 ];
 
 const getChairpersonPrompt = (state) => [
-  new SystemMessage("You are the Chief Investment Officer. Synthesize all analyses into a final recommendation. If evidence is insufficient or volatility is extreme, recommend 'No Recommendation'."),
+  new SystemMessage(`You are the Chief Investment Officer. Synthesize all analyses into a final professional executive recommendation.
+  
+STRICT RULES:
+1. Do not mention companies other than the one being analyzed unless they are explicitly relevant as competitors or partners.
+2. Ensure the Bear Case and Bull Case strictly belong to the selected company.
+3. Replace generic labels with real citations based on the data source (e.g., Yahoo Finance, NewsAPI, Tavily Search, Reuters). Only include sources actually present in the data.
+4. Provide a confidence score based STRICTLY on this calibration:
+   - 80-100: High Confidence
+   - 60-79: Moderate Confidence
+   - 40-59: Low Confidence
+   - Below 40: Insufficient Evidence
+5. Ensure the recommendation (BUY/HOLD/SELL/No Recommendation) aligns logically with the confidence level and analysis.`),
   new HumanMessage(`Research: ${JSON.stringify(state.researchSummary || {})}\nFinancial: ${JSON.stringify(state.financialAnalysis || {})}\nNews: ${JSON.stringify(state.newsAnalysis || {})}\nRisk: ${JSON.stringify(state.riskAnalysis || {})}`)
 ];
 

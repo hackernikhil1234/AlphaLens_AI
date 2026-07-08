@@ -42,6 +42,16 @@ export default function Report() {
     );
   }
 
+  if (!reportData) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
+        <AlertTriangle className="w-12 h-12 text-amber-500" />
+        <p>Report is not available yet or an error occurred.</p>
+        <Link to="/" className="text-indigo-400 hover:underline">Return Home</Link>
+      </div>
+    );
+  }
+
   const { status, report } = reportData;
   const sections = report?.sections || {};
 
