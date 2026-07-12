@@ -7,10 +7,9 @@ const { riskAgent } = require('../agents/riskAgent');
 const { chairpersonAgent } = require('../agents/chairpersonAgent');
 const Run = require('../../models/Run');
 
-// Conditional Edge
 const routeAfterFinancial = (state) => {
   if (state.financialAnalysis?.isDataSufficient === false) {
-    return "Chairperson"; // Skips straight to end to abort
+    return "Chairperson";
   }
   return "News";
 };
@@ -43,7 +42,6 @@ const executeRun = async (runId, initialState) => {
     const graph = buildGraph();
     const finalState = await graph.invoke({ ...initialState, runId });
     
-    // Persist final report
     await Run.findByIdAndUpdate(runId, {
       status: finalState.recommendation === 'No Recommendation' ? 'no_recommendation' : 'completed',
       report: {

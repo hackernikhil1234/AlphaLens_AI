@@ -13,7 +13,7 @@ export default function Analysis() {
   useEffect(() => {
     let intervalId;
     let pollCount = 0;
-    const MAX_POLLS = 60; // 60 × 2.5s = 150 seconds max
+    const MAX_POLLS = 60;
 
     const pollStatus = async () => {
       pollCount++;
@@ -63,7 +63,6 @@ export default function Analysis() {
           {error && <p className="text-amber-400 text-sm">{error}</p>}
         </div>
 
-        {/* Progress Bar */}
         <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
           <motion.div 
             className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500"
@@ -73,7 +72,6 @@ export default function Analysis() {
           />
         </div>
 
-        {/* Agent Cards */}
         <div className="space-y-4">
           {agents.map((agent, idx) => (
             <AgentCard key={idx} agent={agent} />

@@ -22,7 +22,6 @@ const runSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Indexes
 runSchema.index({ ticker: 1 });
 runSchema.index({ createdAt: -1 });
 

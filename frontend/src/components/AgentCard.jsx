@@ -10,7 +10,7 @@ export default function AgentCard({ agent }) {
         return <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />;
       case 'failed':
         return <XCircle className="w-5 h-5 text-red-400" />;
-      default: // pending
+      default:
         return <CircleDashed className="w-5 h-5 text-slate-600" />;
     }
   };

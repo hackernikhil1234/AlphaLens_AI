@@ -6,7 +6,6 @@ const createRun = async (req, res, next) => {
   try {
     const { ticker } = req.body;
     const run = await runService.createRun(ticker);
-    // Trigger data collection and LangGraph background workflow asynchronously
     (async () => {
       try {
         const initialState = await dataCollectionService.collectData(ticker);

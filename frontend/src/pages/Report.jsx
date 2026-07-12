@@ -59,7 +59,6 @@ export default function Report() {
     <div className="min-h-screen bg-slate-950 text-slate-200 py-12 px-4 md:px-8">
       <div className="max-w-4xl mx-auto space-y-12">
         
-        {/* Header */}
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" /> Back to Search
@@ -69,7 +68,6 @@ export default function Report() {
           </div>
         </div>
 
-        {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,7 +95,6 @@ export default function Report() {
           </div>
         </motion.div>
 
-        {/* Detailed Sections */}
         <div className="space-y-8">
           {Object.entries(sections).map(([key, value], idx) => (
             <motion.div 
@@ -115,7 +112,6 @@ export default function Report() {
           ))}
         </div>
 
-        {/* Citations */}
         {report.citations && report.citations.length > 0 && (
           <div className="p-6 rounded-2xl bg-slate-900/30 border border-slate-800">
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Sources & Citations</h3>

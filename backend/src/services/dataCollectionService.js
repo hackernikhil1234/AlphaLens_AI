@@ -4,7 +4,6 @@ const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 const collectData = async (ticker) => {
   try {
-    // 1. Yahoo Finance Data (Company Profile & Financials)
     let company = {};
     let marketData = {};
     
@@ -35,7 +34,6 @@ const collectData = async (ticker) => {
       console.error(`Yahoo Finance error for ${ticker}:`, err.message);
     }
 
-    // 2. News API & Tavily (Recent news)
     let news = [];
     
     if (process.env.NEWS_API_KEY) {
@@ -54,7 +52,6 @@ const collectData = async (ticker) => {
       }
     }
 
-    // Fallback or supplement with Tavily if NewsAPI fails or returns empty
     if (process.env.TAVILY_API_KEY && news.length === 0) {
       try {
         const tavilyResponse = await axios.post('https://api.tavily.com/search', {
@@ -79,7 +76,6 @@ const collectData = async (ticker) => {
     return { ticker, company, marketData, news };
   } catch (error) {
     console.error(`Data collection fatal error for ${ticker}:`, error.message);
-    // Return minimal state if everything completely fails
     return { ticker, company: {}, marketData: {}, news: [] };
   }
 };

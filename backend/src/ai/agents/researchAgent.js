@@ -11,9 +11,6 @@ const researchAgent = async (state) => {
     await updateAgentStatus(state.runId, 'Research Agent', 'completed');
     return { researchSummary: result };
   } catch (error) {
-    console.error("========== RESEARCH AGENT ERROR ==========");
-    console.error(error);
-    console.error(error.stack);
     await updateAgentStatus(state.runId, 'Research Agent', 'failed');
     return {
       errors: ["Research Agent Failed: " + error.message]
