@@ -8,7 +8,7 @@ const routes = require('./routes');
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }));
 app.use(morgan('dev'));
 app.use(express.json());
 
