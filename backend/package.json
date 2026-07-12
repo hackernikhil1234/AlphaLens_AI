@@ -1,14 +1,14 @@
 {
-  "name": "backend",
+  "name": "alphalens-ai-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AlphaLens AI — Multi-agent LangGraph backend for automated equity research",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "AlphaLens AI",
   "license": "ISC",
   "dependencies": {
     "@langchain/core": "^1.2.1",

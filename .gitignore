@@ -86,3 +86,9 @@ typings/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Project specific
+dist/
+build/
+.vscode/
+*.zip
